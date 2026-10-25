@@ -14,10 +14,9 @@ function cleanup() {
 
     tool_unload
 
-    if [ -n "$session" ]; then
-        cd "$session"
+    [ -n "$session" ] && \
+        cd "$session" && \
         git restore .
-    fi
 }
 
 function handle_sigint() {
@@ -36,8 +35,6 @@ function handle_slash() {
 }
 
 chat_select_session
-
-tool_load
 
 echo -ne "\e[?7l"
 
@@ -82,8 +79,8 @@ while true; do
         [ -z $content ] && content="$line" \
             || content="$content"$'\n'"$line"
 
-        # chat_send_messages "$content"
         echo
+        chat_send_messages "$content"
 
         echo -ne "\n$PS"
 

@@ -45,5 +45,5 @@ function terminal_call() {
     sleep "$wait"
     echo >&3
     
-    tool_retval=$(cat "/tmp/mom_terminal.txt")
+    tool_retval=$(cat "/tmp/mom_terminal.screen")
 }

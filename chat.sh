@@ -7,6 +7,45 @@ source ./style.sh
 source ./url.sh
 source ./model.sh
 
+tools='[]'
+
+function tool_load() {
+
+    for tool in ./tool/*.sh; do
+        source "$tool"
+
+        tool_name=$(basename "$tool" .sh)
+        tool_desc=$("$tool_name"_desc)
+
+        style_blue
+        echo "Loading tool/$tool_name"
+        style_resume
+
+        "$tool_name"_init
+
+        tools=$(echo "$tools" | jq \
+            --argjson tool_desc "$tool_desc" \
+            '. += [$tool_desc]')
+    done
+}
+
+function tool_unload() {
+    for tool_name in $(echo "$tools" | jq -r '.[].function.name'); do
+        style_blue
+        echo "Unloading tool/$tool_name"
+        style_resume
+
+        "$tool_name"_exit
+
+        unset -f "$tool_name"_desc
+        unset -f "$tool_name"_init
+        unset -f "$tool_name"_exit
+        unset -f "$tool_name"_call
+    done
+
+    tools='[]'
+}
+
 function chat_create_session() {
     mkdir -p session
 
@@ -55,18 +94,16 @@ function chat_create_session() {
 }
 
 function chat_select_session() {
+    tool_unload
+    tool_load
+
     mkdir -p session
 
-    session=$(dirname \
-        $(find session \
-            -mindepth 2 \
-            -maxdepth 2 \
-            -type f \
-            -name 'messages.json' \
-            | fzf \
-        ) \
-        2>/dev/null \
-    )
+    session=$(find session \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -type d \
+        | fzf)
 
     if [ -z "$session" ]; then
         chat_create_session
@@ -152,45 +189,6 @@ function chat_rename_session() {
     mv "$session" "session/$session_name"
 
     session="session/$session_name"
-}
-
-tools='[]'
-
-function tool_load() {
-
-    for tool in ./tool/*.sh; do
-        source "$tool"
-
-        tool_name=$(basename "$tool" .sh)
-        tool_desc=$("$tool_name"_desc)
-
-        style_blue
-        echo "Loading tool/$tool_name"
-        style_resume
-
-        "$tool_name"_init
-
-        tools=$(echo "$tools" | jq \
-            --argjson tool_desc "$tool_desc" \
-            '. += [$tool_desc]')
-    done
-}
-
-function tool_unload() {
-    for tool_name in $(echo "$tools" | jq -r '.[].function.name'); do
-        style_blue
-        echo "Unloading tool/$tool_name"
-        style_resume
-
-        "$tool_name"_exit
-
-        unset -f "$tool_name"_desc
-        unset -f "$tool_name"_init
-        unset -f "$tool_name"_exit
-        unset -f "$tool_name"_call
-    done
-
-    tools='[]'
 }
 
 function chat_handle_toolcalling() {
