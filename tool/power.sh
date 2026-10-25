@@ -1,8 +1,5 @@
 #!/bin/sh
 
-[ -n "$TOOL_POWER_SH" ] && return
-TOOL_POWER_SH=1
-
 function power_desc() {
     echo '{
         "type": "function",

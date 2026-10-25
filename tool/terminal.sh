@@ -1,8 +1,5 @@
 #!/bin/sh
 
-[ -n "$TOOL_TERMINAL_SH" ] && return
-TOOL_TERMINAL_SH=1
-
 function terminal_desc() {
     echo '{
         "type": "function",
@@ -27,17 +24,17 @@ function terminal_desc() {
 }
 
 function terminal_init() {
-    mkdir -p /tmp/session
-    mkfifo "/tmp/$session.fifo"
-    sht -s 80x24 -o /tmp/$session.txt --json \
+    rm -rf "/tmp/mom_terminal.fifo"
+    mkfifo "/tmp/mom_terminal.fifo"
+    setsid sht -s 80x24 -o /tmp/mom_terminal.screen --json \
         su - mom \
-        < "/tmp/$session.fifo" &
-    exec 3> "/tmp/$session.fifo"
+        < "/tmp/mom_terminal.fifo" &
+    exec 3> "/tmp/mom_terminal.fifo"
 }
 
 function terminal_exit() {
     exec 3>&-
-    rm -f "/tmp/$session.fifo"
+    rm -f "/tmp/mom_terminal.*"
 }
 
 function terminal_call() {
@@ -48,5 +45,5 @@ function terminal_call() {
     sleep "$wait"
     echo >&3
     
-    tool_retval=$(cat "/tmp/$session.txt")
+    tool_retval=$(cat "/tmp/mom_terminal.txt")
 }

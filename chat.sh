@@ -14,7 +14,7 @@ function chat_create_session() {
         echo -n "session_name: "
 
         style_pink
-        read session_name
+        IFS= read -r session_name
         style_resume
 
         if [ -z "$session_name" ]; then
@@ -90,7 +90,7 @@ function chat_select_session() {
 
         [ "$role" == 'tool'      ] && continue
         [ "$role" == 'system'    ] && continue
-        [ "$role" != 'assistant' ] && source ./cleanup.sh
+        [ "$role" != 'assistant' ] && exit
 
         content=$(echo "$message" | jq -r '.content')
         reasoning_content=$(echo "$message" | jq -r '.reasoning_content')
@@ -154,14 +154,19 @@ function chat_rename_session() {
     session="session/$session_name"
 }
 
+tools='[]'
+
 function tool_load() {
-    tools='[]'
 
     for tool in ./tool/*.sh; do
         source "$tool"
 
         tool_name=$(basename "$tool" .sh)
         tool_desc=$("$tool_name"_desc)
+
+        style_blue
+        echo "Loading tool/$tool_name"
+        style_resume
 
         "$tool_name"_init
 
@@ -172,11 +177,20 @@ function tool_load() {
 }
 
 function tool_unload() {
-    for tool in ./tool/*.sh; do
-        tool_name=$(basename "$tool" .sh)
+    for tool_name in $(echo "$tools" | jq -r '.[].function.name'); do
+        style_blue
+        echo "Unloading tool/$tool_name"
+        style_resume
 
         "$tool_name"_exit
+
+        unset -f "$tool_name"_desc
+        unset -f "$tool_name"_init
+        unset -f "$tool_name"_exit
+        unset -f "$tool_name"_call
     done
+
+    tools='[]'
 }
 
 function chat_handle_toolcalling() {
@@ -189,7 +203,7 @@ function chat_handle_toolcalling() {
         tool_call_id=$(echo "$tool_calls" | jq -r ".[$i].id")
         tool_call_type=$(echo "$tool_calls" | jq -r ".[$i].type")
 
-        [ $tool_call_type != 'function' ] && source ./cleanup.sh
+        [ $tool_call_type != 'function' ] && exit
 
         tool_name=$(echo "$tool_calls" | jq -r ".[$i].function.name")
         tool_args=$(echo "$tool_calls" | jq ".[$i].function.arguments | fromjson")
@@ -233,7 +247,7 @@ function chat_send_messages() {
             -H "Authorization: Bearer $api_key" \
             -d "$body")
 
-        [ -z "$response" ] && source ./cleanup.sh
+        [ -z "$response" ] && exit
 
         message=$(echo "$response" | jq '.choices[0].message')
         finish_reason=$(echo "$response" | jq -r '.choices[0].finish_reason')
@@ -242,7 +256,7 @@ function chat_send_messages() {
             style_red
             echo "$response"
             style_resume
-            source ./cleanup.sh
+            exit
         fi
 
         content=$(echo "$message" | jq -r '.content')
@@ -266,7 +280,7 @@ function chat_send_messages() {
         cd "$WORKSPACE/$MOMSPACE"
 
         [ "$finish_reason" == 'stop'       ] && break
-        [ "$finish_reason" != 'tool_calls' ] && source ./cleanup.sh
+        [ "$finish_reason" != 'tool_calls' ] && exit
 
         chat_handle_toolcalling "$message"
     done
