@@ -17,7 +17,6 @@ function slash_session_create() {
         style_resume
 
         if [ -z "$session_name" ]; then
-            echo
             style_red
             echo "session_name cannot be empty"
             style_resume
@@ -28,7 +27,6 @@ function slash_session_create() {
         session="session/$session_name"
 
         if [ -e "$session" ]; then
-            echo
             style_red
             echo "$session already existed"
             style_resume
@@ -143,7 +141,6 @@ function slash_session_rename() {
         fi
 
         if [ -e "session/$session_name" ]; then
-            echo
             style_red
             echo "session/$session_name already existed"
             style_resume
