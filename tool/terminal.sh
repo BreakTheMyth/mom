@@ -21,6 +21,8 @@ function terminal_desc() {
             }
         }
     }'
+
+    return 0
 }
 
 function terminal_init() {
@@ -30,11 +32,15 @@ function terminal_init() {
         su - mom \
         < "/tmp/mom_terminal.fifo" &
     exec 3> "/tmp/mom_terminal.fifo"
+
+    return 0
 }
 
 function terminal_exit() {
     exec 3>&-
     rm -f "/tmp/mom_terminal.*"
+
+    return 0
 }
 
 function terminal_call() {
@@ -46,4 +52,6 @@ function terminal_call() {
     echo >&3
     
     tool_retval=$(cat "/tmp/mom_terminal.screen")
+
+    return 0
 }

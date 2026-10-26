@@ -17,14 +17,16 @@ function power_desc() {
             }
         }
     }'
+
+    return 0
 }
 
 function power_init() {
-    return
+    return 0
 }
 
 function power_exit() {
-    return
+    return 0
 }
 
 function power_call() {
@@ -47,4 +49,6 @@ function power_call() {
     sudo chmod +x "$sh_file"
     tool_retval="$(sudo "$sh_file" 2>&1)"
     sudo -k
+
+    return 0
 }

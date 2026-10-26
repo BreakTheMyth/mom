@@ -1,20 +1,22 @@
 #!/bin/sh
 
-[ -n "$MODEL_SH" ] && return
+[ -n "$MODEL_SH" ] && return 0
 MODEL_SH=1
 
-source ./url.sh
+source ./slash_command/url.sh
 
 model=$(cat config | grep '^model=' | awk -F'model=' '{print $2}' | tr -cd '[:print:]')
 
-function model_change() {
+function slash_model_change() {
     model=$(curl -X GET -sL $list_url \
         -H "Authorization: Bearer $api_key" \
-        | jq -r .data[].id | fzf)
+        | jq -r .data[].id | fzf || true)
 
-    [ -z "$model" ] && return
+    [ -z "$model" ] && return 0
 
     sed -i "s/^model=.*/model=$model/g" config
+
+    return 0
 }
 
-[ -z "$model" ] && model_change
+[ -z "$model" ] && slash_model_change
