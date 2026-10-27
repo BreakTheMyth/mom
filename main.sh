@@ -69,7 +69,6 @@ function handle_slash() {
 
     [ -z "$cmd" ] && return 0
 
-    echo
     "$(echo "slash_$cmd" | tr '/' '_')"
 
     echo -ne "\r\e[K"
