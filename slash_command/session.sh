@@ -109,6 +109,8 @@ function session_history() {
 
     done
 
+    content=
+
     return 0
 }
 
