@@ -12,6 +12,8 @@ function slash_retry() {
     message=$(echo "$messages" | jq '.[-1]')
     role=$(echo "$message" | jq -r '.role')
 
+    [ "$message" == 'null' ] && return 1
+
     content=$(echo "$messages" \
         | jq -r 'map(select(.role == "user"))[-1].content')
 
@@ -25,9 +27,11 @@ function slash_retry() {
         role=$(echo "$message" | jq -r '.role')
     fi
 
-    [ "$role" == 'user' ] && \
-        chat_recv_messages "$content" && \
+    if [ "$role" == 'tool' ] || [ "$role" == 'user' ]; then
+        chat_recv_messages "$content"
+        content=
         return 0
+    fi
 
     [ "$role" != 'assistant' ] && return 1
 
@@ -59,6 +63,6 @@ function slash_retry() {
     cd "$MOMSPACE"
 
     chat_recv_messages "$content"
-
+    content=
     return 0
 }
