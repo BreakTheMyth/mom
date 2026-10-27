@@ -8,13 +8,17 @@ source ./style.sh
 function slash_session_create() {
     mkdir -p session
 
+    wait_for_interrupt=1
+
     while true; do
 
         echo
         echo -n "session_name: "
         style_pink
-        IFS= read -r session_name
+        IFS= read -r session_name || true
         style_resume
+
+        [ "$wait_for_interrupt" -eq 0 ] && return 1
 
         if [ -z "$session_name" ]; then
             style_red
@@ -38,6 +42,8 @@ function slash_session_create() {
 
     done
 
+    wait_for_interrupt=0
+
     mkdir -p "$session"
 
     jq -n --arg content "$(cat prompt/system)" \
@@ -50,27 +56,13 @@ function slash_session_create() {
     git -c user.name="$(whoami)" \
         -c user.email="$(whoami)@localhost" \
         commit -m "first commit"
-    cd "$WORKSPACE/$MOMSPACE"
+    cd "$MOMSPACE"
 
     return 0
 }
 
-function slash_session_select() {
-    slash_tool_unload
-    slash_tool_load
-
-    mkdir -p session
-
-    session=$(find session \
-        -mindepth 1 \
-        -maxdepth 1 \
-        -type d \
-        | fzf || true)
-
-    if [ -z "$session" ]; then
-        slash_session_create
-        return 0
-    fi
+function session_history() {
+    [ -f "$session/messages.json" ] || return 1
 
     messages=$(cat "$session/messages.json" | jq .)
     length=$(echo "$messages" | jq 'length')
@@ -111,18 +103,34 @@ function slash_session_select() {
     return 0
 }
 
+function slash_session_select() {
+    slash_tool_unload
+    slash_tool_load
+
+    mkdir -p session
+
+    session=$(find session \
+        -mindepth 1        \
+        -maxdepth 1        \
+        -type d | fzf || true)
+
+    [ -z "$session" ] && return 1
+    
+    return 0
+}
+
 function slash_session_delete() {
-    slash_session_select
+    slash_session_select || return 1
 
     rm -rf "$session"
 
-    slash_session_select
+    session=
 
     return 0
 }
 
 function slash_session_rename() {
-    slash_session_select
+    slash_session_select || return 1
 
     while true; do
 

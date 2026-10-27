@@ -18,7 +18,7 @@ function slash_retry() {
     if [ "$role" == 'tool' ]; then
         cd "$session"
         git restore .
-        cd "$WORKSPACE$MOMSPACE"
+        cd "$MOMSPACE"
 
         messages=$(cat "$session/messages.json" | jq .)
         message=$(echo "$messages" | jq '.[-1]')
@@ -56,7 +56,7 @@ function slash_retry() {
 
     cd "$session"
     git add .
-    cd "$WORKSPACE/$MOMSPACE"
+    cd "$MOMSPACE"
 
     chat_recv_messages "$content"
 

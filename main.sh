@@ -1,7 +1,7 @@
 #!/bin/sh
 
 WORKSPACE=$(pwd)
-MOMSPACE=$(dirname $0)
+MOMSPACE=$(realpath $(dirname $0))
 
 cd "$MOMSPACE"
 
@@ -23,23 +23,26 @@ function cleanup() {
         git restore .
 }
 
+wait_for_interrupt=0
+
 function handle_sigint() {
-    [ -z "$content" ] && [ -z "$line" ] && exit
+    [ "$wait_for_interrupt" -eq 0 ]     && \
+    [ -z "$content" ] && [ -z "$line" ] && exit 0
+    wait_for_interrupt=0
     content=
     line=
     word=
-    echo -ne "^C\n$PS"
 }
 
 function print_stack() {
     echo
     style_red
-    for ((i=${#FUNCNAME[@]}; i > 0; i--)); do
+    for ((i=$((${#FUNCNAME[@]} - 1)); i > 0; i--)); do
         for ((j=0; j < ${#FUNCNAME[@]} - i; j++)); do
             echo -n '  '
         done
         printf ' - [%s](%s:%s)\n' \
-            "${FUNCNAME[$((i - 1))]}" \
+            "${FUNCNAME[$i]}" \
             "${BASH_SOURCE[$i]}" \
             "${BASH_LINENO[$((i - 1))]}"
     done
@@ -74,15 +77,24 @@ function handle_slash() {
     return 0
 }
 
-slash_session_select
-
 echo -ne "\e[?7l"
 
-content=
-line=
-PS="$(whoami): "
+PS="$(basename $WORKSPACE)> "
 
 while true; do
+
+    if [ -z "$session" ]; then
+        slash_session_select && \
+        session_history
+
+        content=
+        line=
+        word=
+    fi
+
+    if [ -z "$session" ]; then
+        slash_session_create || break
+    fi
 
     echo -ne "\r\e[K"
     [ -z "$content" ] && echo -ne "$PS"
@@ -91,7 +103,7 @@ while true; do
     echo -n "$line"
     style_resume
 
-    read -srN 1 word
+    read -srN 1 word || true
 
     [ "$word" == '/' ] && handle_slash
 

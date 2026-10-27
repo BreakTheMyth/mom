@@ -39,7 +39,7 @@ function chat_handle_toolcalling() {
 
     cd "$session"
     git add .
-    cd "$WORKSPACE/$MOMSPACE"
+    cd "$MOMSPACE"
 
     return 0
 }
@@ -94,7 +94,7 @@ function chat_recv_messages() {
 
         cd "$session"
         git add .
-        cd "$WORKSPACE/$MOMSPACE"
+        cd "$MOMSPACE"
 
         [ "$finish_reason" == 'stop' ] && break
 
@@ -112,7 +112,7 @@ function chat_recv_messages() {
     git -c user.name="$(whoami)" \
         -c user.email="$(whoami)@localhost" \
         commit -m "$1"
-    cd "$WORKSPACE/$MOMSPACE"
+    cd "$MOMSPACE"
 
     return 0
 }
@@ -145,7 +145,7 @@ function chat_retry() {
     if [ "$role" == 'tool' ]; then
         cd "$session"
         git restore .
-        cd "$WORKSPACE$MOMSPACE"
+        cd "$MOMSPACE"
 
         messages=$(cat "$session/messages.json" | jq .)
         message=$(echo "$messages" | jq '.[-1]')
@@ -183,7 +183,7 @@ function chat_retry() {
 
     cd "$session"
     git add .
-    cd "$WORKSPACE/$MOMSPACE"
+    cd "$MOMSPACE"
 
     chat_recv_messages "$content"
 
