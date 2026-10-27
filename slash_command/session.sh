@@ -8,7 +8,7 @@ source ./style.sh
 function slash_session_create() {
     mkdir -p session
 
-    wait_for_interrupt=1
+    wait_for_interrupt=true
 
     while true; do
 
@@ -18,7 +18,7 @@ function slash_session_create() {
         IFS= read -r session_name || true
         style_resume
 
-        [ "$wait_for_interrupt" -eq 0 ] && return 1
+        ! $wait_for_interrupt && return 1
 
         if [ -z "$session_name" ]; then
             style_red
@@ -42,7 +42,7 @@ function slash_session_create() {
 
     done
 
-    wait_for_interrupt=0
+    wait_for_interrupt=false
 
     prompt=$(find prompt \
         -mindepth 1      \
@@ -112,6 +112,9 @@ function session_history() {
 }
 
 function slash_session_select() {
+    slash_tool_unload
+    slash_tool_load
+
     mkdir -p session
 
     session=$(find session \

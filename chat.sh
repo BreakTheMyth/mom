@@ -120,6 +120,10 @@ function chat_recv_messages() {
 }
 
 function chat_send_messages() {
+    [ -z "$1" ] && return 0
+
+    slash_retry || true
+
     messages=$(cat "$session/messages.json" | jq -c \
         --arg content "$1" \
         '. += [{

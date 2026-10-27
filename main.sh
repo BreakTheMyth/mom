@@ -15,6 +15,7 @@ for sh_file in ./slash_command/*.sh; do
 done
 
 function cleanup() {
+    echo
     style_resume
 
     slash_tool_unload
@@ -26,12 +27,13 @@ function cleanup() {
     echo -e "\e[?7h"
 }
 
-wait_for_interrupt=0
+wait_for_interrupt=false
 
 function handle_sigint() {
-    [ "$wait_for_interrupt" -eq 0 ]     && \
-    [ -z "$content" ] && [ -z "$line" ] && exit 0
-    wait_for_interrupt=0
+    ! $wait_for_interrupt && [ -z "$content" ] && [ -z "$line" ] && \
+        exit 0
+
+    wait_for_interrupt=false
     content=
     line=
     word=
@@ -111,10 +113,6 @@ while true; do
 
     [ -z "$word" ] && continue
 
-    [ "$word" == $'\x7f' ] || [ "$word" == $'\x08' ] && \
-        line=${line%?} && \
-        continue
-
     if [ "$word" == $'\n' ]; then
         if [ "${line: -1}" == '\' ]; then
             content="$content"$'\n'"${line%\\}"
@@ -146,6 +144,21 @@ while true; do
         word=$(echo -ne '^'$"\x$(printf '%x' $((ascii + 64)))")
 
     [[ ! $word =~ [[:print:]] ]] && continue
+
+    if [ "$word" == '^H' ] || [ "$word" == '^?' ]; then
+        line=${line%?}
+        continue
+    fi
+
+    if [ "$word" == '^L' ]; then
+        clear
+        continue
+    fi
+
+    if [ "$word" == '^U' ]; then
+        session_history | less -R +G
+        continue
+    fi
 
     line="$line$word"
 done

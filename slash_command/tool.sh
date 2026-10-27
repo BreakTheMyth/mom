@@ -3,6 +3,8 @@
 [ -n "$TOOL_SH" ] && return 0
 TOOL_SH=1
 
+source ./style.sh
+
 tools='[]'
 
 function slash_tool_load() {
