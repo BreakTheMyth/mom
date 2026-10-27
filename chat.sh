@@ -46,13 +46,15 @@ function chat_handle_toolcalling() {
 
 function chat_recv_messages() {
     while true; do
-        body=$(jq -nc \
-            --arg     model    "$model" \
+        prompt=$(cat $session/prompt.json)
+        body=$(jq -nc                      \
+            --arg     model    "$model"    \
+            --argjson prompt   "$prompt"   \
             --argjson messages "$messages" \
-            --argjson tools    "$tools" \
+            --argjson tools    "$tools"    \
             '{
                 model: $model,
-                messages: $messages,
+                messages: $prompt + $messages,
                 stream: false,
                 tools: $tools
             }')
@@ -109,7 +111,7 @@ function chat_recv_messages() {
     done
 
     cd "$session"
-    git -c user.name="$(whoami)" \
+    git -c user.name="$(whoami)"            \
         -c user.email="$(whoami)@localhost" \
         commit -m "$1"
     cd "$MOMSPACE"

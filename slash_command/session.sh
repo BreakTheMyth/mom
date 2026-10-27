@@ -44,19 +44,29 @@ function slash_session_create() {
 
     wait_for_interrupt=0
 
-    mkdir -p "$session"
+    prompt=$(find prompt \
+        -mindepth 1      \
+        -maxdepth 1      \
+        -type f          \
+        -name "*.json" | \
+        fzf || true)
 
-    jq -n --arg content "$(cat prompt/system)" \
-        '[{role:"system",content:$content}]' \
-        > "$session/messages.json"
+    [ -z "$prompt" ] && return 1
+
+    mkdir -p "$session"
+    echo '[]' > "$session/messages.json"
+    cp "$prompt" "$session/prompt.json"
 
     cd "$session"
     git init -b main
     git add .
-    git -c user.name="$(whoami)" \
+    git -c user.name="$(whoami)"            \
         -c user.email="$(whoami)@localhost" \
         commit -m "first commit"
     cd "$MOMSPACE"
+
+    clear
+    slash_tool_load
 
     return 0
 }
@@ -80,7 +90,6 @@ function session_history() {
         fi
 
         [ "$role" == 'tool'      ] && continue
-        [ "$role" == 'system'    ] && continue
         [ "$role" != 'assistant' ] && return 1
 
         content=$(echo "$message" | jq -r '.content')
@@ -105,16 +114,20 @@ function session_history() {
 
 function slash_session_select() {
     slash_tool_unload
-    slash_tool_load
 
     mkdir -p session
 
     session=$(find session \
         -mindepth 1        \
         -maxdepth 1        \
-        -type d | fzf || true)
+        -type d          | \
+        fzf || true)
 
     [ -z "$session" ] && return 1
+
+    clear
+    slash_tool_load
+    session_history
     
     return 0
 }

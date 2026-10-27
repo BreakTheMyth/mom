@@ -7,7 +7,7 @@ source ./style.sh
 
 base_url=$(cat config | grep '^base_url=' | awk -F'base_url=' '{print $2}' | tr -cd '[:print:]')
 
-function slash_url_load() {
+function url_load() {
     list_url="$base_url/models"
     chat_url="$base_url/chat/completions"
     api_key=$(cat api_key | tr -cd '[:print:]')
@@ -29,9 +29,10 @@ function slash_url_change() {
     sed -i "s|^base_url=.*|base_url=$base_url|g" config
     echo "$api_key" > api_key
 
-    slash_url_load
+    url_load
 
     return 0
 }
 
-[ -z "$base_url" ] && slash_url_change || slash_url_load
+([ -z "$base_url" ] || [ ! -f api_key ]) && \
+    slash_url_change || url_load

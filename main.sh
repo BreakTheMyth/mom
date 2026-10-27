@@ -13,7 +13,6 @@ for sh_file in ./slash_command/*.sh; do
 done
 
 function cleanup() {
-    echo -e "\e[?7h"
     style_resume
 
     slash_tool_unload
@@ -21,6 +20,8 @@ function cleanup() {
     [ -n "$session" ] && \
         cd "$session" && \
         git restore .
+
+    echo -e "\e[?7h"
 }
 
 wait_for_interrupt=0
@@ -84,8 +85,7 @@ PS="$(basename $WORKSPACE)> "
 while true; do
 
     if [ -z "$session" ]; then
-        slash_session_select && \
-        session_history
+        slash_session_select || true
 
         content=
         line=
@@ -126,7 +126,7 @@ while true; do
             continue
         fi
 
-        [ -z $content ] && content="$line" \
+        [ -z "$content" ] && content="$line" \
             || content="$content"$'\n'"$line"
 
         echo
