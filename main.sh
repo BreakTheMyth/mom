@@ -1,5 +1,7 @@
 #!/bin/sh
 
+FZF_DEFAULT_OPTS='--height ~40% --layout=reverse --prompt=" /"'
+
 WORKSPACE=$(pwd)
 MOMSPACE=$(realpath $(dirname $0))
 
@@ -85,15 +87,15 @@ PS="$(basename $WORKSPACE)> "
 while true; do
 
     if [ -z "$session" ]; then
-        slash_session_select || true
+        slash_session_select || \
+        slash_session_create || \
+        break
+
+        session_history
 
         content=
         line=
         word=
-    fi
-
-    if [ -z "$session" ]; then
-        slash_session_create || break
     fi
 
     echo -ne "\r\e[K"

@@ -65,9 +65,6 @@ function slash_session_create() {
         commit -m "first commit"
     cd "$MOMSPACE"
 
-    clear
-    slash_tool_load
-
     return 0
 }
 
@@ -115,8 +112,6 @@ function session_history() {
 }
 
 function slash_session_select() {
-    slash_tool_unload
-
     mkdir -p session
 
     session=$(find session \
@@ -126,10 +121,6 @@ function slash_session_select() {
         fzf || true)
 
     [ -z "$session" ] && return 1
-
-    clear
-    slash_tool_load
-    session_history
     
     return 0
 }
