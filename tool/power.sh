@@ -13,7 +13,8 @@ function power_desc() {
                         "type": "string",
                         "description": "申请 root 执行的脚本内容, 脚本执行完成后返回执行日志, 可能遇到: 1. 执行前被用户拒绝; 2. 执行时用户忘记密码; 3. 执行时因脚本内容导致永久阻塞无法返回;"
                     }
-                }
+                },
+                "required": ["scripts"]
             }
         }
     }'

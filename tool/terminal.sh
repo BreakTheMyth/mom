@@ -15,9 +15,12 @@ function terminal_desc() {
                     },
                     "wait": {
                         "type": "integer",
+                        "minimum": 1,
+                        "default": 1,
                         "description": "等待几秒后查看终端渲染结果"
                     }
-                }
+                },
+                "required": ["input"]
             }
         }
     }'
@@ -46,6 +49,7 @@ function terminal_exit() {
 function terminal_call() {
     input=$(echo "$1" | jq -r '.input')
     wait=$(echo "$1" | jq -r '.wait')
+    [ "$wait" == 'null' ] && wait=1
 
     echo -n "$input" >&3
     sleep "$wait"
