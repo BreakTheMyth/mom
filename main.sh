@@ -24,7 +24,7 @@ function cleanup() {
         cd "$session" && \
         git restore .
 
-    echo -e "\e[?7h"
+    echo -ne "\e[?7h"
 }
 
 wait_for_interrupt=false
@@ -44,12 +44,12 @@ function print_stack() {
     style_red
     for ((i=$((${#FUNCNAME[@]} - 1)); i > 0; i--)); do
         for ((j=0; j < ${#FUNCNAME[@]} - i; j++)); do
-            echo -n '  '
+            echo -n '  ' >&2
         done
         printf ' - [%s](%s:%s)\n' \
             "${FUNCNAME[$i]}" \
             "${BASH_SOURCE[$i]}" \
-            "${BASH_LINENO[$((i - 1))]}"
+            "${BASH_LINENO[$((i - 1))]}" >&2
     done
     style_resume
 }
@@ -91,12 +91,17 @@ while true; do
         slash_session_select || \
         slash_session_create || \
         break
+    fi
 
-        session_history
-
+    if [ "$prev_session" != "$session" ]; then
+        prev_session="$session"
         content=
         line=
         word=
+
+        slash_tool_unload
+        slash_tool_load
+        session_history
     fi
 
     echo -ne "\r\e[K"

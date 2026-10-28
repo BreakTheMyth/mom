@@ -22,7 +22,7 @@ function slash_session_create() {
 
         if [ -z "$session_name" ]; then
             style_red
-            echo "session_name cannot be empty"
+            echo "session_name cannot be empty" >&2
             style_resume
 
             continue
@@ -32,7 +32,7 @@ function slash_session_create() {
 
         if [ -e "$session" ]; then
             style_red
-            echo "$session already existed"
+            echo "$session already existed" >&2
             style_resume
 
             continue
@@ -44,25 +44,16 @@ function slash_session_create() {
 
     wait_for_interrupt=false
 
-    prompt=$(find prompt \
-        -mindepth 1      \
-        -maxdepth 1      \
-        -type f          \
-        -name "*.json" | \
-        fzf || true)
-
-    [ -z "$prompt" ] && return 1
-
     mkdir -p "$session"
     echo '[]' > "$session/messages.json"
-    cp "$prompt" "$session/prompt.json"
+    cp prompt/default.json "$session/prompt.json"
 
     cd "$session"
-    git init -b main
+    git init -b main > /dev/null
     git add .
     git -c user.name="$(whoami)"            \
         -c user.email="$(whoami)@localhost" \
-        commit -m "first commit"
+        commit -m "first commit" > /dev/null
     cd "$MOMSPACE"
 
     return 0
@@ -112,9 +103,6 @@ function session_history() {
 }
 
 function slash_session_select() {
-    slash_tool_unload
-    slash_tool_load
-
     mkdir -p session
 
     session=$(find session \
@@ -151,7 +139,7 @@ function slash_session_rename() {
 
         if [ -z "$session_name" ]; then
             style_red
-            echo "session_name cannot be empty"
+            echo "session_name cannot be empty" >&2
             style_resume
 
             continue
@@ -159,7 +147,7 @@ function slash_session_rename() {
 
         if [ -e "session/$session_name" ]; then
             style_red
-            echo "session/$session_name already existed"
+            echo "session/$session_name already existed" >&2
             style_resume
 
             continue

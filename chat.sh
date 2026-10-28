@@ -72,7 +72,7 @@ function chat_recv_messages() {
 
         if [ "$message" == 'null' ]; then
             style_red
-            echo "$response"
+            echo "$response" >&2
             style_resume
             return 1
         fi
@@ -102,7 +102,7 @@ function chat_recv_messages() {
 
         if [ "$finish_reason" != 'tool_calls' ]; then
             style_red
-            echo "$response"
+            echo "$response" >&2
             style_resume
             return 1
         fi
@@ -113,7 +113,7 @@ function chat_recv_messages() {
     cd "$session"
     git -c user.name="$(whoami)"            \
         -c user.email="$(whoami)@localhost" \
-        commit -m "$1"
+        commit -m "$1" > /dev/null
     cd "$MOMSPACE"
 
     return 0
