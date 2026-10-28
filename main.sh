@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FZF_DEFAULT_OPTS='--height ~40% --layout=reverse --prompt=" /"'
+FZF_DEFAULT_OPTS='--height ~40% --layout=reverse'
 
 WORKSPACE=$(pwd)
 MOMSPACE=$(realpath $(dirname $0))
@@ -65,7 +65,7 @@ function handle_slash() {
         grep '^slash_*'     | \
         sed  's/^slash_//g' | \
         tr   '_' '/'        | \
-        fzf || true)
+        fzf --prompt=' /' || true)
 
     [ -z "$cmd" ] && return 0
 
@@ -81,7 +81,57 @@ function handle_slash() {
     return 0
 }
 
-echo -ne "\e[?7l"
+function handle_at() {
+    folder="$WORKSPACE"
+
+    while true; do
+        relative_path="$(realpath --relative-to=$WORKSPACE $folder)"
+        fzf_prompt=" @$relative_path/"
+        [ "$relative_path" == '.'   ] && fzf_prompt=" @"
+        [ "$relative_path" == '..'  ] && fzf_prompt=" @$(realpath $folder)/"
+        [[ $relative_path  == ../* ]] && fzf_prompt=" @$(realpath $folder)/"
+
+        file=$(echo "$(ls -a1 $folder)"$'\n''...' | \
+            sort | fzf --prompt="$fzf_prompt" || true)
+
+        [ -z "$file" ] && return 0
+
+        if [ "$file" == '...' ]; then
+            files=$(find $folder           \
+                -type d                    \
+                -name '.git'               \
+                -prune                     \
+                -o -print                | \
+                fzf --multi                \
+                    --prompt="$fzf_prompt" \
+                    --preview="$MOMSPACE/.fzf-preview.sh {}" || true)
+            
+            [ -z "$files" ] && continue
+
+            for file in $files; do
+                line="$line[$(basename $file)]($(realpath $file)) "
+            done
+
+            break
+        fi
+
+        if [ "$file" == '..' ]; then
+            folder="$(dirname $folder)"
+            continue
+        fi
+
+        folder="$(realpath $folder/$file)"
+
+        if [ "$file" == '.' ] || [ ! -d "$folder" ]; then
+            line="$line[$(basename $folder)]($(realpath $folder))"
+            break
+        fi
+    done
+
+    word=
+
+    return 0
+}
 
 PS="$(basename $WORKSPACE)> "
 
@@ -99,12 +149,13 @@ while true; do
         line=
         word=
 
+        echo
         slash_tool_unload
         slash_tool_load
         session_history
     fi
 
-    echo -ne "\r\e[K"
+    echo -ne "\e[?7l\r\e[K"
     [ -z "$content" ] && echo -ne "$PS"
 
     style_pink
@@ -114,6 +165,7 @@ while true; do
     read -srN 1 word || true
 
     [ "$word" == '/' ] && handle_slash
+    [ "$word" == '@' ] && handle_at
 
     [ -z "$word" ] && continue
 

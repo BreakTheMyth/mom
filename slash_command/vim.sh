@@ -14,17 +14,17 @@ function slash_vim() {
     echo "$line"    >> "$tempfile"
 
     vim + "$tempfile"
-    new_content=$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$tempfile")
+    vim_content=$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$tempfile")
 
-    [ -z "$new_content" ] && return 0
+    [ -z "$vim_content" ] && return 0
 
     echo
     echo -ne "$PS"
     style_pink
-    echo "$new_content"
+    echo "$vim_content"
     style_resume
 
-    chat_send_messages "$new_content"
+    chat_send_messages "$vim_content"
 
     rm -f "$tempfile"
     content=

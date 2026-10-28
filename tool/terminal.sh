@@ -29,19 +29,20 @@ function terminal_desc() {
 }
 
 function terminal_init() {
-    rm -rf "/tmp/mom_terminal.fifo"
-    mkfifo "/tmp/mom_terminal.fifo"
-    setsid sht -s 80x24 -o /tmp/mom_terminal.screen --json \
+    mkdir -p "/tmp/$(whoami)"
+    rm -rf "/tmp/$(whoami)/mom_terminal.fifo"
+    mkfifo "/tmp/$(whoami)/mom_terminal.fifo"
+    setsid sht -s 80x24 -o /tmp/$(whoami)/mom_terminal.screen --json \
         su - mom \
-        < "/tmp/mom_terminal.fifo" &
-    exec 3> "/tmp/mom_terminal.fifo"
+        < "/tmp/$(whoami)/mom_terminal.fifo" &
+    exec 3> "/tmp/$(whoami)/mom_terminal.fifo"
 
     return 0
 }
 
 function terminal_exit() {
     exec 3>&-
-    rm -f "/tmp/mom_terminal.*"
+    rm -rf "/tmp/$(whoami)"
 
     return 0
 }
@@ -55,7 +56,7 @@ function terminal_call() {
     sleep "$wait"
     echo >&3
     
-    tool_retval=$(cat "/tmp/mom_terminal.screen")
+    tool_retval=$(cat "/tmp/$(whoami)/mom_terminal.screen")
 
     return 0
 }

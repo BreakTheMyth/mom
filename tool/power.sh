@@ -27,13 +27,15 @@ function power_init() {
 }
 
 function power_exit() {
+    rm -rf "/tmp/$(whoami)"
     return 0
 }
 
 function power_call() {
     scripts=$(echo "$1" | jq -r '.scripts')
 
-    sh_file="/tmp/$session.sh"
+    mkdir -p "/tmp/$(whoami)"
+    sh_file="/tmp/$(whoami)/mom_power.sh"
 
     mark="# Deleting this line means you agree"
     echo "$scripts" > "$sh_file"
@@ -47,9 +49,11 @@ function power_call() {
         return
     fi
 
+    echo "$scripts" > "$sh_file"
     sudo chmod +x "$sh_file"
     tool_retval="$(sudo "$sh_file" 2>&1)"
     sudo -k
+    rm -f "$sh_file"
 
     return 0
 }
