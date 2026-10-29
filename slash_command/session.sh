@@ -62,7 +62,8 @@ function slash_session_create() {
 function session_history() {
     [ -f "$session/messages.json" ] || return 1
 
-    messages=$(cat "$session/messages.json" | jq .)
+    [ -n "$1" ] && messages=$(cat "$1" | jq .) || \
+        messages=$(cat "$session/messages.json" | jq .)
     length=$(echo "$messages" | jq 'length')
 
     for ((i=0; i < length; i++)); do
@@ -78,6 +79,7 @@ function session_history() {
         fi
 
         [ "$role" == 'tool'      ] && continue
+        [ "$role" == 'system'    ] && continue
         [ "$role" != 'assistant' ] && return 1
 
         content=$(echo "$message" | jq -r '.content')
@@ -102,6 +104,8 @@ function session_history() {
     return 0
 }
 
+export -f session_history
+
 function slash_session_select() {
     mkdir -p session
 
@@ -109,7 +113,7 @@ function slash_session_select() {
         -mindepth 1        \
         -maxdepth 1        \
         -type d          | \
-        fzf || true)
+        fzf --preview='session={} session_history' || true)
 
     [ -z "$session" ] && return 1
     

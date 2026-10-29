@@ -8,6 +8,10 @@ source ./chat.sh
 function slash_retry() {
     [ -z "$session" ] && return 1
 
+    cd "$session"
+    git restore .
+    cd "$MOMSPACE"
+
     messages=$(cat "$session/messages.json" | jq .)
     message=$(echo "$messages" | jq '.[-1]')
     role=$(echo "$message" | jq -r '.role')
@@ -16,16 +20,6 @@ function slash_retry() {
 
     content=$(echo "$messages" \
         | jq -r 'map(select(.role == "user"))[-1].content')
-
-    if [ "$role" == 'tool' ]; then
-        cd "$session"
-        git restore .
-        cd "$MOMSPACE"
-
-        messages=$(cat "$session/messages.json" | jq .)
-        message=$(echo "$messages" | jq '.[-1]')
-        role=$(echo "$message" | jq -r '.role')
-    fi
 
     if [ "$role" == 'tool' ] || [ "$role" == 'user' ]; then
         chat_recv_messages "$content"

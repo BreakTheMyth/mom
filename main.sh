@@ -71,11 +71,6 @@ function handle_slash() {
 
     "$(echo "slash_$cmd" | tr '/' '_')"
 
-    echo -ne "\r\e[K"
-    [ -z "$content" ] && echo -ne "$PS"
-    style_pink
-    echo -n "$line"
-    style_resume
     word=
 
     return 0
@@ -88,8 +83,8 @@ function handle_at() {
         relative_path="$(realpath --relative-to=$WORKSPACE $folder)"
         fzf_prompt=" @$relative_path/"
         [ "$relative_path" == '.'   ] && fzf_prompt=" @"
-        [ "$relative_path" == '..'  ] && fzf_prompt=" @$(realpath $folder)/"
-        [[ $relative_path  == ../* ]] && fzf_prompt=" @$(realpath $folder)/"
+        [ "$relative_path" == '..'  ] && fzf_prompt=" @$folder/"
+        [[ $relative_path  == ../* ]] && fzf_prompt=" @$folder/"
 
         file=$(echo "$(ls -a1 $folder)"$'\n''...' | \
             sort | fzf --prompt="$fzf_prompt" || true)
@@ -97,19 +92,20 @@ function handle_at() {
         [ -z "$file" ] && return 0
 
         if [ "$file" == '...' ]; then
-            files=$(find $folder           \
-                -type d                    \
-                -name '.git'               \
-                -prune                     \
-                -o -print                | \
-                fzf --multi                \
-                    --prompt="$fzf_prompt" \
-                    --preview="$MOMSPACE/.fzf-preview.sh {}" || true)
+            files=$(find $folder                                \
+                -type d                                         \
+                -name '.git'                                    \
+                -prune                                          \
+                -o -exec realpath --relative-to=$folder {} \; | \
+                fzf --multi                                     \
+                    --prompt="$fzf_prompt"                      \
+                    --preview="$MOMSPACE/.fzf-preview.sh $folder/{}" || true)
             
             [ -z "$files" ] && continue
 
             for file in $files; do
-                line="$line[$(basename $file)]($(realpath $file)) "
+                real_path=$(realpath $file)
+                line="$line[$(basename $real_path)]($real_path) "
             done
 
             break
@@ -123,7 +119,7 @@ function handle_at() {
         folder="$(realpath $folder/$file)"
 
         if [ "$file" == '.' ] || [ ! -d "$folder" ]; then
-            line="$line[$(basename $folder)]($(realpath $folder))"
+            line="$line[$(basename $folder)]($(realpath $folder)) "
             break
         fi
     done
@@ -203,11 +199,6 @@ while true; do
 
     if [ "$word" == '^H' ] || [ "$word" == '^?' ]; then
         line=${line%?}
-        continue
-    fi
-
-    if [ "$word" == '^L' ]; then
-        clear
         continue
     fi
 
