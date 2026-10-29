@@ -32,16 +32,16 @@ function chat_handle_toolcalling() {
             --arg result "$tool_result" \
             '{status: $status, result: $result}')
 
-        messages=$(cat "$session/messages.json" | jq -c \
-            --arg id      "$tool_call_id"               \
-            --arg content "$tool_content"               \
-            '. += [{
+        jq -n                                             \
+            --slurpfile messages "$session/messages.json" \
+            --arg id      "$tool_call_id"                 \
+            --arg content "$tool_content"                 \
+            '$messages[0] + [{
                 "role": "tool",
                 "tool_call_id": $id,
                 "content": $content
-            }]')
-
-        echo "$messages" | jq . > "$session/messages.json"
+            }]' > "$session/messages.json.tmp" \
+        && mv "$session/messages.json.tmp" "$session/messages.json"
     done
 
     cd "$session"
@@ -53,15 +53,14 @@ function chat_handle_toolcalling() {
 
 function chat_recv_messages() {
     while true; do
-        prompt=$(cat $session/prompt.json)
-        body=$(jq -nc                      \
-            --arg     model    "$model"    \
-            --argjson prompt   "$prompt"   \
-            --argjson messages "$messages" \
-            --argjson tools    "$tools"    \
+        body=$(jq -nc                                     \
+            --arg       model    "$model"                 \
+            --slurpfile prompt   "$session/prompt.json"   \
+            --slurpfile messages "$session/messages.json" \
+            --argjson   tools    "$tools"                 \
             '{
                 model: $model,
-                messages: $prompt + $messages,
+                messages: $prompt[0] + $messages[0],
                 stream: false,
                 tools: $tools
             }')
@@ -95,11 +94,11 @@ function chat_recv_messages() {
         [ -n "$content" ] && echo "$content"
         style_resume
 
-        messages=$(cat "$session/messages.json" | jq -c \
-            --argjson message "$message" \
-            '. += [$message]')
-
-        echo "$messages" | jq . > "$session/messages.json"
+        jq -n                                                          \
+            --slurpfile messages "$session/messages.json"              \
+            --argjson   message  "$message"                            \
+            '$messages[0] + [$message]' > "$session/messages.json.tmp" \
+        && mv "$session/messages.json.tmp" "$session/messages.json"
 
         cd "$session"
         git add .
@@ -131,14 +130,14 @@ function chat_send_messages() {
 
     slash_retry || true
 
-    messages=$(cat "$session/messages.json" | jq -c \
-        --arg content "$1" \
-        '. += [{
+    jq -n                                             \
+        --slurpfile messages "$session/messages.json" \
+        --arg       content "$1"                      \
+        '$messages[0] + [{
             "role": "user",
             "content": $content
-        }]')
-
-    echo "$messages" | jq . > "$session/messages.json"
+        }]' > "$session/messages.json.tmp"            \
+    && mv "$session/messages.json.tmp" "$session/messages.json"
 
     chat_recv_messages "$1"
 
@@ -148,21 +147,17 @@ function chat_send_messages() {
 function chat_retry() {
     [ -z "$session" ] && return 1
 
-    messages=$(cat "$session/messages.json" | jq .)
-    message=$(echo "$messages" | jq '.[-1]')
-    role=$(echo "$message" | jq -r '.role')
+    role=$(jq -r '.[-1].role' "$session/messages.json")
 
-    content=$(echo "$messages" \
-        | jq -r 'map(select(.role == "user"))[-1].content')
+    content=$(jq -r 'map(select(.role == "user"))[-1].content' \
+        "$session/messages.json")
 
     if [ "$role" == 'tool' ]; then
         cd "$session"
         git restore .
         cd "$MOMSPACE"
 
-        messages=$(cat "$session/messages.json" | jq .)
-        message=$(echo "$messages" | jq '.[-1]')
-        role=$(echo "$message" | jq -r '.role')
+        role=$(jq -r '.[-1].role' "$session/messages.json")
     fi
 
     [ "$role" == 'user' ] && \
@@ -171,27 +166,30 @@ function chat_retry() {
 
     [ "$role" != 'assistant' ] && return 1
 
-    tool_calls=$(echo "$message" | jq '.tool_calls')
-    length=$(echo "$tool_calls" | jq 'length')
+    message_index=$(jq 'length - 1' "$session/messages.json")
+    length=$(jq ".[$message_index].tool_calls | length" \
+        "$session/messages.json")
 
     [ "$length" -eq 0 ] && return 0
 
     for ((i=0; i < length; i++)); do
-        tool_call_id=$(echo "$tool_calls" | jq -r ".[$i].id")
-        tool_call_type=$(echo "$tool_calls" | jq -r ".[$i].type")
+        tool_call_id=$(jq -r ".[$message_index].tool_calls[$i].id" \
+            "$session/messages.json")
+        tool_call_type=$(jq -r ".[$message_index].tool_calls[$i].type" \
+            "$session/messages.json")
 
         [ $tool_call_type != 'function' ] && return 1
 
-        messages=$(cat "$session/messages.json" | jq -c \
-            --arg content "Tool execution interrupted" \
-            --arg id      "$tool_call_id" \
-            '. += [{
-                "role": "tool", 
-                "tool_call_id": $id, 
+        jq -n                                                 \
+            --slurpfile messages "$session/messages.json"     \
+            --arg       content  "Tool execution interrupted" \
+            --arg       id       "$tool_call_id"              \
+            '$messages[0] + [{
+                "role": "tool",
+                "tool_call_id": $id,
                 "content": $content
-            }]')
-
-        echo "$messages" | jq . > "$session/messages.json"
+            }]' > "$session/messages.json.tmp" \
+        && mv "$session/messages.json.tmp" "$session/messages.json"
     done
 
     cd "$session"

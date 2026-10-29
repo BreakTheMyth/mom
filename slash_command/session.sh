@@ -62,16 +62,16 @@ function slash_session_create() {
 function session_history() {
     [ -f "$session/messages.json" ] || return 1
 
-    [ -n "$1" ] && messages=$(cat "$1" | jq .) || \
-        messages=$(cat "$session/messages.json" | jq .)
-    length=$(echo "$messages" | jq 'length')
+    history_file="$session/messages.json"
+    [ -n "$1" ] && history_file="$1"
+
+    length=$(jq 'length' "$history_file")
 
     for ((i=0; i < length; i++)); do
-        message=$(echo "$messages" | jq ".[$i]")
-        role=$(echo "$message" | jq -r '.role')
+        role=$(jq -r ".[$i].role" "$history_file")
 
         if [ "$role" == 'user' ]; then
-            content=$(echo "$message" | jq -r '.content')
+            content=$(jq -r ".[$i].content" "$history_file")
             style_pink
             echo "$content"
             style_resume
@@ -82,9 +82,9 @@ function session_history() {
         [ "$role" == 'system'    ] && continue
         [ "$role" != 'assistant' ] && return 1
 
-        content=$(echo "$message" | jq -r '.content')
-        reasoning_content=$(echo "$message" | jq -r '.reasoning_content')
-        tool_calls=$(echo "$message" | jq -r '.tool_calls')
+        content=$(jq -r ".[$i].content" "$history_file")
+        reasoning_content=$(jq -r ".[$i].reasoning_content" "$history_file")
+        tool_calls=$(jq -c ".[$i].tool_calls" "$history_file")
 
         style_faint_italic
         [ "$reasoning_content" != 'null' ] && \

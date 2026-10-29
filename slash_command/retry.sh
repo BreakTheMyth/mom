@@ -12,12 +12,10 @@ function slash_retry() {
     git restore .
     cd "$MOMSPACE"
 
-    messages=$(cat "$session/messages.json" | jq .)
-    message=$(echo "$messages" | jq '.[-1]')
-    role=$(echo "$message" | jq -r '.role')
+    role=$(jq -r '.[-1].role' "$session/messages.json")
 
-    content=$(echo "$messages" \
-        | jq -r 'map(select(.role == "user"))[-1].content')
+    content=$(jq -r 'map(select(.role == "user"))[-1].content' \
+        "$session/messages.json")
 
     if [ "$content" == 'null' ]; then
         content=
@@ -32,8 +30,9 @@ function slash_retry() {
 
     [ "$role" != 'assistant' ] && return 1
 
-    tool_calls=$(echo "$message" | jq '.tool_calls')
-    length=$(echo "$tool_calls" | jq 'length')
+    message_index=$(jq 'length - 1' "$session/messages.json")
+    length=$(jq ".[$message_index].tool_calls | length" \
+        "$session/messages.json")
 
     if [ "$length" -eq 0 ]; then
         content=
@@ -41,23 +40,25 @@ function slash_retry() {
     fi
 
     for ((i=0; i < length; i++)); do
-        tool_call_id=$(echo "$tool_calls" | jq -r ".[$i].id")
-        tool_call_type=$(echo "$tool_calls" | jq -r ".[$i].type")
+        tool_call_id=$(jq -r ".[$message_index].tool_calls[$i].id" \
+            "$session/messages.json")
+        tool_call_type=$(jq -r ".[$message_index].tool_calls[$i].type" \
+            "$session/messages.json")
 
         [ $tool_call_type != 'function' ] && return 1
 
         tool_content=$(jq -nc '{status: "unknown", result: null}')
 
-        messages=$(cat "$session/messages.json" | jq -c \
-            --arg id      "$tool_call_id"               \
-            --arg content "$tool_content"               \
-            '. += [{
-                "role": "tool", 
-                "tool_call_id": $id, 
+        jq -n                                             \
+            --slurpfile messages "$session/messages.json" \
+            --arg id      "$tool_call_id"                 \
+            --arg content "$tool_content"                 \
+            '$messages[0] + [{
+                "role": "tool",
+                "tool_call_id": $id,
                 "content": $content
-            }]')
-
-        echo "$messages" | jq . > "$session/messages.json"
+            }]' > "$session/messages.json.tmp" \
+        && mv "$session/messages.json.tmp" "$session/messages.json"
     done
 
     cd "$session"
