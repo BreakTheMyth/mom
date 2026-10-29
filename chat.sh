@@ -25,9 +25,16 @@ function chat_handle_toolcalling() {
 
         "$tool_name"_call "$tool_args"
 
+        [ $? -eq 0 ] && tool_status="success" || tool_status="error"
+
+        tool_content=$(jq -nc           \
+            --arg status "$tool_status" \
+            --arg result "$tool_result" \
+            '{status: $status, result: $result}')
+
         messages=$(cat "$session/messages.json" | jq -c \
-            --arg content "$tool_retval" \
-            --arg id      "$tool_call_id" \
+            --arg id      "$tool_call_id"               \
+            --arg content "$tool_content"               \
             '. += [{
                 "role": "tool",
                 "tool_call_id": $id,

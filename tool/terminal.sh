@@ -42,7 +42,7 @@ function terminal_init() {
 
 function terminal_exit() {
     exec 3>&-
-    rm -rf "/tmp/$(whoami)"
+    rm -rf "/tmp/$(whoami)/mom_terminal.*"
 
     return 0
 }
@@ -56,7 +56,7 @@ function terminal_call() {
     sleep "$wait"
     echo >&3
     
-    tool_retval=$(cat "/tmp/$(whoami)/mom_terminal.screen")
+    tool_result=$(cat "/tmp/$(whoami)/mom_terminal.screen")
 
     return 0
 }

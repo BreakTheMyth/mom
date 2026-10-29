@@ -1,10 +1,10 @@
 #!/bin/sh
 
-function power_desc() {
+function sudo_desc() {
     echo '{
         "type": "function",
         "function": {
-            "name": "power",
+            "name": "sudo",
             "description": "申请 root 执行",
             "parameters": {
                 "type": "object",
@@ -22,20 +22,20 @@ function power_desc() {
     return 0
 }
 
-function power_init() {
+function sudo_init() {
     return 0
 }
 
-function power_exit() {
-    rm -rf "/tmp/$(whoami)"
+function sudo_exit() {
+    rm -rf "/tmp/$(whoami)/mom_sudo.*"
     return 0
 }
 
-function power_call() {
+function sudo_call() {
     scripts=$(echo "$1" | jq -r '.scripts')
 
     mkdir -p "/tmp/$(whoami)"
-    sh_file="/tmp/$(whoami)/mom_power.sh"
+    sh_file="/tmp/$(whoami)/mom_sudo.sh"
 
     mark="# Deleting this line means you agree"
     echo "$scripts" > "$sh_file"
@@ -45,13 +45,13 @@ function power_call() {
     vim "$sh_file"
 
     if [ -n "$(grep "^$mark" "$sh_file")" ]; then
-        tool_retval="Refused"
-        return
+        tool_result="Refused"
+        return 1
     fi
 
     echo "$scripts" > "$sh_file"
     sudo chmod +x "$sh_file"
-    tool_retval="$(sudo "$sh_file" 2>&1)"
+    tool_result="$(sudo "$sh_file" 2>&1)"
     sudo -k
     rm -f "$sh_file"
 

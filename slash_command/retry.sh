@@ -16,10 +16,13 @@ function slash_retry() {
     message=$(echo "$messages" | jq '.[-1]')
     role=$(echo "$message" | jq -r '.role')
 
-    [ "$message" == 'null' ] && return 1
-
     content=$(echo "$messages" \
         | jq -r 'map(select(.role == "user"))[-1].content')
+
+    if [ "$content" == 'null' ]; then
+        content=
+        return 1
+    fi
 
     if [ "$role" == 'tool' ] || [ "$role" == 'user' ]; then
         chat_recv_messages "$content"
@@ -32,7 +35,10 @@ function slash_retry() {
     tool_calls=$(echo "$message" | jq '.tool_calls')
     length=$(echo "$tool_calls" | jq 'length')
 
-    [ "$length" -eq 0 ] && return 0
+    if [ "$length" -eq 0 ]; then
+        content=
+        return 0
+    fi
 
     for ((i=0; i < length; i++)); do
         tool_call_id=$(echo "$tool_calls" | jq -r ".[$i].id")
@@ -40,9 +46,11 @@ function slash_retry() {
 
         [ $tool_call_type != 'function' ] && return 1
 
+        tool_content=$(jq -nc '{status: "unknown", result: null}')
+
         messages=$(cat "$session/messages.json" | jq -c \
-            --arg content "Tool execution interrupted" \
-            --arg id      "$tool_call_id" \
+            --arg id      "$tool_call_id"               \
+            --arg content "$tool_content"               \
             '. += [{
                 "role": "tool", 
                 "tool_call_id": $id, 
