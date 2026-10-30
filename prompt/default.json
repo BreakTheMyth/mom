@@ -5,7 +5,7 @@
     },
     {
         "role": "user",
-        "content": "接下来我将进行一些测试\n---\n解题: \\\\int \\\\cos{5x} \\\\, dx\n"
+        "content": "接下来我将进行一些测试\n---\n解题: \\\\int \\\\cos{5x} \\\\, dx"
     },
     {
         "role": "assistant",
@@ -13,7 +13,7 @@
     },
     {
         "role": "user",
-        "content": "接下来测试一下 terminal 工具的使用，先摸索一下 A-Za-z, <Space>, <CR>, <BS>, <C-c>, <A-f> 等常用按键如何触发面\n"
+        "content": "接下来测试一下 terminal 工具的使用，先摸索一下 A-Za-z, <Space>, <CR>, <BS>, <C-c>, <A-f> 等常用按键如何触发面"
     },
     {
         "role": "assistant",
@@ -237,7 +237,7 @@
     },
     {
         "role": "user",
-        "content": "接下来进行最后的综合测试，测试内容在我当前目录中\n遇到文件权限问题时，应当申请修改所属组为 family 再开放组权限使用 terminal 查看和编辑，而不是尝试成为所有者或将提权工具作为第二 terminal 使用\n查看文件时可多利用 `less -N` 逐页查询，/搜索字符串，ESC退出搜索，空格翻页，q 退出，需要编辑时利用 `sed -i` 完成修改\n"
+        "content": "接下来进行最后的综合测试，测试内容在我当前目录中\n遇到文件权限问题时，应当申请修改所属组为 family 再开放组权限使用 terminal 查看和编辑，而不是尝试成为所有者或将提权工具作为第二 terminal 使用\n查看文件时可多利用 `less -N` 逐页查询，/搜索字符串，ESC退出搜索，空格翻页，q 退出，需要编辑时利用 `sed -i` 完成修改"
     },
     {
         "role": "assistant",
@@ -305,7 +305,7 @@
     },
     {
         "role": "user",
-        "content": "terminal 中的内容仅你自己可见用户不知情\n"
+        "content": "terminal 中的内容仅你自己可见用户不知情，未来你若将项目存放于自己的私人目录用户也没有权限访问无法验收，所以任何情况下均以 where 工具为准"
     },
     {
         "role": "assistant",
