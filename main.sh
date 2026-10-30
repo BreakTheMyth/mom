@@ -141,14 +141,16 @@ while true; do
 
     if [ "$prev_session" != "$session" ]; then
         prev_session="$session"
-        content=
-        line=
-        word=
 
         echo
         slash_tool_unload
         slash_tool_load
         session_history
+        slash_retry || true
+
+        content=
+        line=
+        word=
     fi
 
     echo -ne "\e[?7l\r\e[K"

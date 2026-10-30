@@ -8,27 +8,24 @@ source ./style.sh
 function slash_vim() {
     tempfile=$(mktemp)
 
-    STYLE_ENABLE=false session_history \
-    | sed 's/^/# /g' > "$tempfile"
+    STYLE_ENABLE=false session_history | \
+        sed 's/^/\/\/ /g' > "$tempfile"
+
     echo "$content" >> "$tempfile"
     echo "$line"    >> "$tempfile"
 
     vim + "$tempfile"
-    vim_content=$(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$tempfile")
+    vim_content=$(sed '/^[[:space:]]*\/\//d; /^[[:space:]]*$/d' "$tempfile")
+    rm -f "$tempfile"
 
-    [ -z "$vim_content" ] && return 0
+    content="$vim_content"
+    line=
 
     echo
     echo -ne "$PS"
     style_pink
-    echo "$vim_content"
+    echo "$content"
     style_resume
-
-    chat_send_messages "$vim_content"
-
-    rm -f "$tempfile"
-    content=
-    line=
 
     return 0
 }

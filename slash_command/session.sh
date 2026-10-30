@@ -63,7 +63,6 @@ function session_history() {
     [ -f "$session/messages.json" ] || return 1
 
     history_file="$session/messages.json"
-    [ -n "$1" ] && history_file="$1"
 
     length=$(jq 'length' "$history_file")
 

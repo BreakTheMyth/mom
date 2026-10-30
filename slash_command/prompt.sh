@@ -3,24 +3,16 @@
 [ -n "$PROMPT_SH" ] && return 0
 PROMPT_SH=1
 
-for prompt in prompt/*.json; do
-    jq 'empty' "$prompt" || continue
+source ./style.sh
 
-    eval 'function slash_prompt_'$(basename $prompt .json)'() {
-        jq -n                                                            \
-            --slurpfile messages "$session/messages.json"                \
-            --slurpfile prompt   "'$prompt'"                             \
-            "\$messages[0] + \$prompt[0]" > "$session/messages.json.tmp" \
-        && mv "$session/messages.json.tmp" "$session/messages.json"
-
-        cd "$session"
-        git add .
-        cd "$MOMSPACE"
-
-        echo
-        session_history "'$prompt'"
-
-        content=
+for prompt in prompt/*.md; do
+    eval 'function slash_prompt_'$(basename $prompt .md)'() {
+        content="$content"$'\n'"$line$(cat $prompt)"
         line=
+
+        style_pink
+        cat "$prompt"
+        style_resume
+        echo
     }'
 done
