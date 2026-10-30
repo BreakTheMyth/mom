@@ -5,7 +5,7 @@ function where_desc() {
         "type": "function",
         "function": {
             "name": "where",
-            "description": "获取用户所在的目录",
+            "description": "获取正在与你对话的用户所在的工作目录",
             "parameters": {
                 "type": "object",
                 "properties": {}
